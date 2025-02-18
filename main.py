@@ -1,9 +1,10 @@
 import telebot
-import os, io
+import os, io, re
 from dotenv import load_dotenv
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 from collections import Counter
 import PyPDF2
+import traceback
 
 # Cargar variables de entorno desde .env
 load_dotenv()
@@ -24,7 +25,7 @@ def send_welcome(message):
 	bot.reply_to(message, """
     Hola, soy un bot que tiene distintas funcionalidades, estos son los comandos disponibles:
     \n /count - Contar palabras, caracteres o palabras mas frecuentes de un texto
-    \n /upload_file - Contar palabras y caracteres de un archivo txt o pdf
+    \n /upload_file - Contar palabras, caracteres y palabras mas frecuentes de un archivo txt o pdf
     \n /start - Mensaje de bienvenida
     """,)
 
@@ -68,27 +69,31 @@ def handle_count_choice(message):
 # Función para contar la cantidad de palabras
 def count_words(message):
    words = message.text.split()
-   word_count = len(words)
-   bot.reply_to(message, f"📝 El texto tiene {word_count} palabras")
+   bot.reply_to(message, f"📝 El texto tiene {len(words)} palabras")
 
 # Función para contar la cantidad de caracteres
 def count_characters(message):
      char_count = len(message.text)
      bot.reply_to(message, f"📝 El texto tiene {char_count} caracteres")
 
-# Función para contar la frecuencia de palabras
+# Función para mensajes de texto
 def count_word_frequency(message):
-    words = message.text.lower().split()
+    response = count_word_frequency_from_text(message.text)
+    bot.reply_to(message, response)
+
+# Función generica para contar la frecuencia de palabras
+def count_word_frequency_from_text(text):
+    words = re.findall(r'\b\w+\b', text.lower(), re.UNICODE)  # Extrae palabras
     word_counts = Counter(words)
-    most_common = word_counts.most_common(5)  # Top 5 palabras
+    most_common = word_counts.most_common(5)  # Top 5 palabras mas frecuentes
 
     response = "📊 Palabras más frecuentes:\n"
     for word, count in most_common:
         response += f"{word}: {count} veces\n"
 
-    bot.reply_to(message, response)
+    return response
 
-# Comando /upload_file para procesar archivos de texto
+# Comando /upload_file para procesar archivos .txt o .pdf
 @bot.message_handler(commands=['upload_file'])
 def request_document(message):
     bot.send_message(message.chat.id, "📂 Envíame un archivo de texto (.txt) o un PDF (.pdf) para analizar.")
@@ -117,14 +122,17 @@ def handle_document_step(message):
             bot.reply_to(message, "⚠ Formato no soportado. Envíame un archivo .txt o .pdf.")
             return
 
-        # Contar palabras y caracteres
-        word_count = len(text.split())
+        # Contar palabras, caracteres y palabras mas frecuentes
+        words = re.findall(r'\b\w+\b', text.lower(), re.UNICODE) 
         char_count = len(text)
+        word_freq_response = count_word_frequency_from_text(text)
 
-        bot.reply_to(message, f"📄 El archivo tiene {word_count} palabras y {char_count} caracteres.")
+        # Enviar respuesta
+        bot.reply_to(message, f"📄 El archivo tiene {len(words)} palabras y {char_count} caracteres.\n{word_freq_response}")
         
     except Exception as e:
-        bot.reply_to(message, f"⚠ Error al procesar el archivo: {str(e)}")
+        error_details = traceback.format_exc()
+        bot.reply_to(message, f"⚠ Error al procesar el archivo:\n {error_details}")
 
 # Función para extraer texto de un archivo PDF
 def extract_text_from_pdf(pdf_data):

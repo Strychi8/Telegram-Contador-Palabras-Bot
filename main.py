@@ -1,8 +1,9 @@
 import telebot
-import os
+import os, io
 from dotenv import load_dotenv
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 from collections import Counter
+import PyPDF2
 
 # Cargar variables de entorno desde .env
 load_dotenv()
@@ -22,7 +23,8 @@ bot = telebot.TeleBot(TOKEN)
 def send_welcome(message):
 	bot.reply_to(message, """
     Hola, soy un bot que tiene distintas funcionalidades, estos son los comandos disponibles:
-    \n /count - Contar palabras o caracteres de un texto
+    \n /count - Contar palabras, caracteres o palabras mas frecuentes de un texto
+    \n /upload_file - Contar palabras y caracteres de un archivo txt o pdf
     \n /start - Mensaje de bienvenida
     """,)
 
@@ -85,6 +87,55 @@ def count_word_frequency(message):
         response += f"{word}: {count} veces\n"
 
     bot.reply_to(message, response)
+
+# Comando /upload_file para procesar archivos de texto
+@bot.message_handler(commands=['upload_file'])
+def request_document(message):
+    bot.send_message(message.chat.id, "📂 Envíame un archivo de texto (.txt) o un PDF (.pdf) para analizar.")
+    bot.register_next_step_handler(message, handle_document_step)
+
+# Función para procesar el archivo enviado
+def handle_document_step(message):
+    if not message.document:
+        bot.send_message(message.chat.id, "⚠ No enviaste un documento. Usa /upload_file y envía un archivo valido.")
+        return
+
+    try:
+        file_id = message.document.file_id
+        file_info = bot.get_file(file_id)
+        downloaded_file = bot.download_file(file_info.file_path)
+
+        # Detectar extensión del archivo
+        file_extension = message.document.file_name.split(".")[-1].lower()
+
+        if file_extension == "txt":
+            # Decodificar el contenido del archivo
+            text = downloaded_file.decode("utf-8")
+        elif file_extension == "pdf":
+            text = extract_text_from_pdf(downloaded_file)
+        else:
+            bot.reply_to(message, "⚠ Formato no soportado. Envíame un archivo .txt o .pdf.")
+            return
+
+        # Contar palabras y caracteres
+        word_count = len(text.split())
+        char_count = len(text)
+
+        bot.reply_to(message, f"📄 El archivo tiene {word_count} palabras y {char_count} caracteres.")
+        
+    except Exception as e:
+        bot.reply_to(message, f"⚠ Error al procesar el archivo: {str(e)}")
+
+# Función para extraer texto de un archivo PDF
+def extract_text_from_pdf(pdf_data):
+    text = ""
+    try:
+        pdf_reader = PyPDF2.PdfReader(io.BytesIO(pdf_data))
+        for page in pdf_reader.pages:
+            text += page.extract_text() + "\n"
+    except Exception as e:
+        text = f"⚠ No se pudo leer el PDF: {str(e)}"
+    return text
 
 # Definir un gestor de mensajes para textos generales
 @bot.message_handler(content_types=["text"])

@@ -7,7 +7,7 @@ de mensajes de texto, contar palabras mas frecuentes, contar palabras y caracter
 - Un bot token de Telegram obtenido del BotFather en Telegram
 - La librería telebot instalada (pip install pyTelegramBotAPI)
 - La libreria python-dotenv instalada (pip install python-dotenv)
-- La libreria pymupdf instalada (pip install pymupdf)
+- La libreria pypdf2 instalada (pip install pypdf2)
 
 > [!NOTE]
 > Sustituye "TELEGRAM_TOKEN" en el código del bot por tu token bot real.

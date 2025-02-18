@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 from collections import Counter
 import PyPDF2
-import traceback
 
 # Cargar variables de entorno desde .env
 load_dotenv()
@@ -131,8 +130,7 @@ def handle_document_step(message):
         bot.reply_to(message, f"📄 El archivo tiene {len(words)} palabras y {char_count} caracteres.\n{word_freq_response}")
         
     except Exception as e:
-        error_details = traceback.format_exc()
-        bot.reply_to(message, f"⚠ Error al procesar el archivo:\n {error_details}")
+        bot.reply_to(message, f"⚠ Error al procesar el archivo: {str(e)}")
 
 # Función para extraer texto de un archivo PDF
 def extract_text_from_pdf(pdf_data):

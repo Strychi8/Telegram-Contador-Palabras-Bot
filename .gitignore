@@ -1,5 +1,2 @@
 .env
 venv/
-Procfile
-requirements.txt
-runtime.txt

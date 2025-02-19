@@ -1,6 +1,6 @@
 # Creacion de un bot para Telegram con Python
 Este codigo muestra distintas funcionalidades, como saludar a los usuarios, contar palabras, contar caracteres o
-contar palabras mas frecuentes de mensajes de texto y archivos txt, pdf, etc.
+contar palabras mas frecuentes de mensajes de texto y archivos txt o pdf.
 
 ### Requisitos previos
 - Python instalado
